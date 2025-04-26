@@ -1,0 +1,89 @@
+
+networks:
+  local-kafka:
+    driver: bridge
+  minio-network:
+    driver: bridge
+  mongo-network:
+    driver: bridge
+
+services:
+
+  zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        container_name: zookeeper
+        ports:
+          - "2181:2181"
+        networks:
+          - local-kafka
+        environment:
+          ZOOKEEPER_CLIENT_PORT: 2181
+          ZOOKEEPER_TICK_TIME: 2000
+  
+  broker:
+            image: confluentinc/cp-kafka:latest
+            container_name: broker
+            env_file:
+              - .env
+            networks:
+              - local-kafka
+            ports:
+              - "9092:9092"
+              - "9093:9093"
+            depends_on:
+              - zookeeper
+            environment:
+              KAFKA_BROKER_ID: 1
+              KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+              KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+              KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+              KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+              KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:9093,PLAINTEXT_EXTERNAL://0.0.0.0:9092
+              KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:9093,PLAINTEXT_EXTERNAL://${HOST_IP}:9092
+              KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+              KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+              KAFKA_LISTENER_NAMES: PLAINTEXT_INTERNAL,PLAINTEXT_EXTERNAL
+      
+  kafka-ui:
+            image: provectuslabs/kafka-ui
+            container_name: kafka-ui
+            networks:
+              - local-kafka
+            depends_on:
+              - broker
+            ports:
+              - "7777:8080"
+            restart: always
+            environment:
+              - KAFKA_CLUSTERS_0_NAME=broker
+              - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9093
+              - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+        
+  minio:
+            image: minio/minio:latest
+            container_name: minio
+            restart: always
+            command: server --console-address :9001 /data
+            environment:
+              - MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE
+              - MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+            volumes:
+              - .minio:/data
+            ports:
+              - 9000:9000
+              - 9001:9001
+            networks:
+              - minio-network
+  
+  mongodb:
+        image: mongo:latest
+        container_name: mongodb
+        ports:
+          - "27017:27017"
+        volumes:
+          - ./data/db:/data/db
+        networks:
+          - mongo-network   
+volumes:
+  kafka-data:  # Declare the volume
+    driver: local
