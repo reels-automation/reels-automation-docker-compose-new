@@ -8,6 +8,23 @@ networks:
 
 services:
 
+  kafka-init:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - broker
+    entrypoint: >
+      bash -c "
+        echo 'Waiting for Kafka to be ready...';
+        until kafka-topics --bootstrap-server broker:9093 --list; do sleep 2; done;
+        kafka-topics --create --topic temas --bootstrap-server broker:9093 --partitions 1 --replication-factor 1;
+        kafka-topics --create --topic scripts_video --bootstrap-server broker:9093 --partitions 1 --replication-factor 1;
+        kafka-topics --create --topic audio_subtitles --bootstrap-server broker:9093 --partitions 1 --replication-factor 1;
+        kafka-topics --create --topic subtitles-audios --bootstrap-server broker:9093 --partitions 1 --replication-factor 1;
+        kafka-topics --create --topic audio_homero --bootstrap-server broker:9093 --partitions 1 --replication-factor 1;
+      "
+    networks:
+      - local-kafka
+
   zookeeper:
         image: confluentinc/cp-zookeeper:latest
         container_name: zookeeper
