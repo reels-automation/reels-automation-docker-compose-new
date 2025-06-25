@@ -92,6 +92,17 @@ services:
             networks:
               - minio-network
   
+  mongo-init:
+      image: mongo:latest
+      container_name: mongo-init
+      depends_on:
+        - mongodb
+      volumes:
+        - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      networks:
+        - mongo-network
+      entrypoint: ["mongosh", "--host", "mongodb", "--file", "/docker-entrypoint-initdb.d/mongo-init.js"]
+
   mongodb:
         image: mongo:latest
         container_name: mongodb
