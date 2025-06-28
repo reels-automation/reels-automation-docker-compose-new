@@ -1,3 +1,4 @@
+# Create the network before running the compose (once) docker network create local-kafka
 networks:
   local-kafka:
     name: local-kafka
