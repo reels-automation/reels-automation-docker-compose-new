@@ -86,8 +86,8 @@ services:
             restart: always
             command: server --console-address :9001 /data
             environment:
-              - MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE
-              - MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+              - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+              - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
               - MINIO_BROWSER_REDIRECT_URL=http://${MINIO_HOST_REDIRECT}
             volumes:
               - .minio:/data
@@ -96,7 +96,21 @@ services:
               - 9001:9001
             networks:
               - minio-network
-  
+  createbuckets-minio:
+   image: minio/minio:latest
+   container_name: createbuckets-minio
+   depends_on:
+     - minio
+   restart: on-failure
+   networks:
+     - minio-network
+   environment:
+     - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+     - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+   volumes:
+     - ./create_minio_buckets.sh:/create_minio_buckets.sh:ro
+   entrypoint: /bin/sh /create_minio_buckets.sh
+
   mongo-init:
       image: mongo:latest
       container_name: mongo-init
