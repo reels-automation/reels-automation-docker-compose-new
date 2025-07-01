@@ -10,6 +10,8 @@ networks:
   mongo-network:
     name: mongo-network
     external: true
+  minio-admin-files:
+    external: true
 
 services:
 
@@ -130,7 +132,41 @@ services:
         volumes:
           - ./data/db:/data/db
         networks:
-          - mongo-network   
+          - mongo-network
+  
+  minio-admin-files:
+    image: minio/minio:latest
+    container_name: minio-admin-files
+    restart: always
+    command: server --console-address :9001 /data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ADMIN_FILES_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_ADMIN_FILES_SECRET_KEY}
+      - MINIO_BROWSER_UPLOAD_LIMIT=10GiB
+    volumes:
+      - ${MINIO_ADMIN_FILES_FOLDER_LOCATION}:/data
+    ports:
+      - 9002:9000
+      - 9003:9001
+    networks:
+      - minio-admin-files
+
+  api-minio-admin:
+    image: ghcr.io/reels-automation/admin-api:main
+    container_name: api-minio-admin
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ADMIN_FILES_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_ADMIN_FILES_SECRET_KEY}
+      MINIO_FOLDER_LOCATION: ${MINIO_ADMIN_FILES_FOLDER_LOCATION}
+      MINIO_URL: ${MINIO_ADMIN_FILES_URL_ADMIN}
+      MINIO_PORT: ${MINIO_ADMIN_FILES_PORT}
+      BUCKETS: ${BUCKETS_ADMIN_FILES}
+    ports:
+        - "9999:9999"
+    networks:
+      - minio-admin-files
+    restart: unless-stopped
+
 volumes:
   kafka-data:  # Declare the volume
     driver: local
