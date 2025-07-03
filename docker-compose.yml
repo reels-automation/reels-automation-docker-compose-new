@@ -31,7 +31,7 @@ services:
       "
     networks:
       - local-kafka
-    restart: always
+    restart: on-failure
 
   zookeeper:
         image: confluentinc/cp-zookeeper:latest
