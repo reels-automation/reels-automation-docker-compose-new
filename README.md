@@ -1,6 +1,6 @@
 # Infraestructura de aprendiendo con personajes
 
-En este repositorio se encuentra la infraestructura necesaria para ejecutar todo el software. 
+En este repositorio se encuentra la infraestructura necesaria para ejecutar todo el software.
 
 ## Cómo ejecutar
 
